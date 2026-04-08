@@ -26,8 +26,11 @@ if ($opcion != "") {
     $contenido = fn_menu_opciones($conn);
 
 //------------------------------------------------------------
-$esqueleto = file_get_contents("esqueleto.html");
-$html = sprintf($esqueleto, $contenido);
+if (!isset($_REQUEST['plano'])) {
+    $esqueleto = file_get_contents("esqueleto.html");
+    $html = sprintf($esqueleto, $contenido);
+} else
+    $html = $contenido;
 print $html;
 
 //------------------------------------------------------------

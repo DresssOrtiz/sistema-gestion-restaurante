@@ -122,3 +122,177 @@ footer * {
     vertical-align: middle;
     margin-left:    35px;
 }
+
+#LSTRESERVAS table {
+    margin:         auto;
+}
+.TBL_PEDIDOS {
+    width:              100%;
+    border-collapse:    collapse;
+    font-family:        Arial, sans-serif;
+    margin-bottom:      20px;
+    border:             1px solid #ddd;
+}
+.TBL_PEDIDOS tr.TIPO_PLT {
+    background:         #444;
+}
+.TBL_PEDIDOS tr.TIPO_PLT td {
+    color:              white;
+    font-weight:        bold;
+}
+.TBL_PEDIDOS tr.ENCB_PLT {
+    background:         #CCC;
+}
+.TBL_PEDIDOS input[type="number"] {
+    width:70px;
+    text-align:center;
+    background: cyan;
+}
+.CONT_TOTAL {
+    background:#111;
+    color:#0F0;
+    padding:20px;
+    margin-top:10px;
+    text-align:right;
+    font-size:1.8em;
+    font-family:monospace;
+}
+.BTN_PEDIDOS {
+    width:100%;
+    padding:20px;
+    background:#1A237E;
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+    border-radius: 10px;
+}
+.BTN_MESA {
+    margin:         5px;
+    padding:        10px;
+}
+.ALERTA {
+    color:red;
+}
+.REGISTRADO {
+    border:2px solid #2E7D32;
+    background:#E8F5E9;
+    padding:20px;
+    text-align:center;
+}
+.FRM_RESERVAS {
+    background:#f4f4f4;
+    padding:15px;
+    border:1px solid #ccc;
+    border-radius:5px;
+}
+.TBL_COCINA {
+    border-collapse:collapse;
+    font-family:Arial;
+    width: 100%;
+    border: 1px solid #000;
+}
+.TBL_COCINA tr.ENCABEZADO {
+    background:#2c3e50;
+    color:white;
+}
+.TBL_COCINA tr.DATOS {
+    background:#FFF9C4;
+}
+.TBL_COCINA th.MESA {
+    padding:10px;
+}
+.TBL_COCINA tr.DATOS td.MESA {
+    text-align:center;
+    padding:8px;
+}
+.TBL_COCINA button {
+    background:#e67e22;
+    color:white;
+    border:none;
+    padding:6px 12px;
+    border-radius:4px;
+    cursor:pointer;
+    font-weight:bold;
+}
+td.DERECHA {
+    text-align: right;
+}
+td.CENTRADO {
+    text-align: center;
+}
+b.PREPARADO {
+    color:#2e7d32;
+}
+h1 {
+    text-align: center;
+}
+.NOTA_PIE {
+    text-align:right;
+    font-size:10px;
+    color:#999;
+}
+.RESALTADO {
+    text-align:center;
+    padding:30px;
+    border:1px dashed #ccc;
+}
+.REPORTE {
+    background: #f4f4f4;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+.REPORTE table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.REPORTE table th, 
+.REPORTE table td {
+    padding: 10px;
+    text-align: center;
+    border: 1px dashed #ccc;
+}
+.REPORTE .NOMBRE {
+    font-size: 0.9em;
+    color: #666;
+}
+.REPORTE .DATO {
+    font-weight: bold;
+    font-size: 2em;
+}
+.REPORTE .SIN_DATOS {
+    text-align: center;
+    padding: 40px;
+    border: 1px dashed #ccc;
+}
+.RESERVAS {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: Arial, sans-serif;
+}
+.RESERVAS th, 
+.RESERVAS td {
+    border: 1px solid #000;
+    padding: 8px;
+    text-align: left;
+}
+.RESERVAS tr:first-child,
+.RESERVAS th {
+    background-color: #CCCCCC;
+    font-weight: bold;
+}
+.RESERVAS td {
+    text-align: center;
+}
+.RESERVAS td.MESA {
+    font-size:      1.2em;
+}
+.MOSTRAR {
+    max-width:      600px;
+    background:     navy;
+    color:          white;
+    padding:        3px;
+    text-align:     left;
+    overflow:       auto;
+    font-family:    monospace;
+}
