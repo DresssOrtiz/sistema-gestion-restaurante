@@ -33,24 +33,19 @@ function fn_boton_menu_principal($conn)
  * @return string Interfaz HTML (Login o Menú) basada en validación de Token y Roles.
  */
 function fn_menu_opciones($conn)
-/*--------------------------------------------------------------------*/
 {
     if (session_status() === PHP_SESSION_NONE) session_start();
     $retorno = "";
     $mostrar_login = false;
 
-    //----------------------------------------
-    // 1. Manejo de Salida (Logout)
-    //----------------------------------------
+    // Manejo de salida (logout)
     if (isset($_REQUEST['accion']) && $_REQUEST['accion'] == 'salir') {
         session_destroy();
         $retorno = "<h2>Sesión cerrada correctamente</h2>";
         $mostrar_login = true;
     }
 
-    //----------------------------------------
-    // 2. Procesamiento de Intento de Login
-    //----------------------------------------
+    // Procesamiento del intento de login
     if (!$mostrar_login && !isset($_SESSION['usuario_id']) && isset($_POST['login'])) {
         $login = $_POST['login'];
         $clave_plana = $_POST['clave'];
@@ -65,6 +60,7 @@ function fn_menu_opciones($conn)
             $user_id = $res->datos[0]['id'];
             $nuevo_token = uniqid();
 
+            // Actualizar el token del usuario
             procesar_query("UPDATE usuarios SET token = '$nuevo_token' WHERE id = $user_id", $conn);
 
             $_SESSION['usuario_id'] = $user_id;
@@ -76,9 +72,7 @@ function fn_menu_opciones($conn)
         }
     }
 
-    //----------------------------------------
-    // 3. Validación de Seguridad y Delegación
-    //----------------------------------------
+    // Validación de seguridad y delegación por rol
     if (!$mostrar_login && isset($_SESSION['usuario_id'])) {
         $user_id = $_SESSION['usuario_id'];
         $token_recibido = $_REQUEST['token'] ?? '';
@@ -97,11 +91,10 @@ function fn_menu_opciones($conn)
         $mostrar_login = true;
     }
 
-    //----------------------------------------
-    // 4. Formulario de ingreso
-    //----------------------------------------
-    if ($mostrar_login)
+    // Mostrar el formulario de login si el usuario no está autenticado
+    if ($mostrar_login) {
         $retorno .= fn_formulario_login();
+    }
 
     return $retorno;
 }
@@ -114,15 +107,15 @@ function fn_menu_opciones($conn)
  * @return string Fragmento HTML con los botones permitidos para el usuario actual.
  */
 function fn_generar_interfaz_por_rol($conn, $token)
-/*--------------------------------------------------------------------*/
 {
     $uid = $_SESSION['usuario_id'];
     $opcion = $_REQUEST['opcion'] ?? '';
     $funcion = "fn_" . $opcion;
 
     // Opción pública
-    if ($opcion == 'desplegar_menu' && is_callable($funcion))
+    if ($opcion == 'desplegar_menu' && is_callable($funcion)) {
         return $funcion($conn);
+    }
 
     // Opciones con control por rol
     $autorizado = false;
@@ -139,17 +132,31 @@ function fn_generar_interfaz_por_rol($conn, $token)
         case 'cocina':
             $autorizado = fn_validar_rol_db($conn, $uid, 'cocinero');
             break;
+
+        case 'admin_dashboard':  // Asegúrate de que esta línea esté aquí para el ADMINISTRADOR
+            $autorizado = fn_validar_rol_db($conn, $uid, 'admin');
+            break;
     }
 
-    if ($autorizado && is_callable($funcion))
+    // Si el rol es autorizado para esa opción
+    if ($autorizado && is_callable($funcion)) {
         return $funcion($conn);
+    }
 
     // Menú principal
     $retorno = "<h1>Opciones del Programa</h1><div class='MENU_OPCIONES'>";
 
+    // Menú para todos los roles
     $scr_menu = "window.open('?opcion=desplegar_menu&token=$token', '_top');";
     $retorno .= "<button onClick=\"$scr_menu\">Desplegar Menu</button>";
 
+    // Menú para el rol ADMINISTRADOR
+    if (fn_validar_rol_db($conn, $uid, 'admin')) {
+    $scr_dashboard = "window.open('?opcion=admin_dashboard&token=$token', '_top');";
+    $retorno .= "<button onClick=\"$scr_dashboard\">Dashboard Admin</button>";
+}
+
+    // Menú para el rol MAITRE
     if (fn_validar_rol_db($conn, $uid, 'maitre')) {
         $scr_reservas = "window.open('?opcion=gestion_reservas&token=$token', '_top');";
         $retorno .= "<button onClick=\"$scr_reservas\">Reservas</button>";
@@ -158,11 +165,13 @@ function fn_generar_interfaz_por_rol($conn, $token)
         $retorno .= "<button onClick=\"$scr_reporte\">Reporte</button>";
     }
 
+    // Menú para el rol MESERO
     if (fn_validar_rol_db($conn, $uid, 'mesero')) {
         $scr_pedido = "window.open('?opcion=realizar_pedidos&token=$token', '_top');";
         $retorno .= "<button onClick=\"$scr_pedido\">Registrar Pedido</button>";
     }
 
+    // Menú para el rol COCINERO
     if (fn_validar_rol_db($conn, $uid, 'cocinero')) {
         $scr_cocina = "window.open('?opcion=cocina&token=$token', '_top');";
         $retorno .= "<button onClick=\"$scr_cocina\">Cocina</button>";
@@ -172,6 +181,144 @@ function fn_generar_interfaz_por_rol($conn, $token)
     $retorno .= "</div><br><a href='$uereele'>Cerrar Sesión</a>";
 
     return $retorno;
+}
+
+function fn_admin_dashboard($conn, $token)
+{
+    // Mostrar título del Dashboard
+    $retorno = "<h1>Bienvenido al Dashboard de Administrador</h1>";
+    $retorno .= "<p>Aquí puedes gestionar el sistema.</p>";
+
+    // Opciones disponibles para el administrador
+    $retorno .= "<h2>Opciones de Gestión</h2>";
+    $retorno .= "<ul>";
+    
+    // Enlace para gestionar reservas
+    $retorno .= "<li><a href='?opcion=gestion_reservas&token=$token'>Gestionar Reservas</a></li>";
+
+    // Enlace para ver reportes estadísticos
+    $retorno .= "<li><a href='?opcion=reporte_estadistico&token=$token'>Ver Reporte Estadístico</a></li>";
+    
+    // Enlace para administrar usuarios (nuevo caso de uso para el administrador)
+    $retorno .= "<li><a href='?opcion=administrar_usuarios&token=$token'>Administrar Usuarios</a></li>";
+
+    // Opción para ver el historial de reservas y pedidos
+    $retorno .= "<li><a href='?opcion=ver_historial_reservas&token=$token'>Ver Historial de Reservas y Pedidos</a></li>";
+    
+    // Opción para ver estadísticas del sistema (por ejemplo, número de usuarios, pedidos, etc.)
+    $retorno .= "<li><a href='?opcion=ver_estadisticas&token=$token'>Estadísticas del Sistema</a></li>";
+
+    $retorno .= "</ul>";
+
+    // Agregar un enlace para salir del sistema
+    $retorno .= "<br><a href='?opcion=menu_opciones&token=$token&accion=salir'>Cerrar Sesión</a>";
+
+    return $retorno;
+}
+
+
+function fn_administrar_usuarios($conn, $token)
+{
+    $retorno = "<h1>Administrar Usuarios</h1>";
+
+    // Consulta para obtener todos los usuarios
+    $sql = "SELECT id, nombre, login FROM usuarios";
+    $res = procesar_query($sql, $conn);
+
+    // Verificar si hay usuarios
+    if ($res->cantidad > 0) {
+        $retorno .= "<table><tr><th>ID</th><th>Nombre</th><th>Login</th></tr>";
+        foreach ($res->datos as $usuario) {
+            $retorno .= "<tr><td>" . $usuario['id'] . "</td><td>" . $usuario['nombre'] . "</td><td>" . $usuario['login'] . "</td></tr>";
+        }
+        $retorno .= "</table>";
+    } else {
+        $retorno .= "<p>No se encontraron usuarios.</p>";
+    }
+
+    // Agregar un enlace para regresar al menú de administración
+    $retorno .= "<br><a href='?opcion=admin_dashboard&token=$token'>Volver al Dashboard Admin</a>";
+
+    return $retorno;
+}
+
+function fn_ver_historial_reservas($conn, $token)
+{
+    $retorno = "<h1>Historial de Reservas y Pedidos</h1>";
+
+    // Consulta para obtener todas las reservaciones y pedidos
+    $sql = "
+        SELECT R.id AS reservacion_id, U.nombre AS cliente, R.estado AS estado_reserva, H.mesa_id, 
+               P.id AS pedido_id, P.solicitado AS estado_pedido  -- Aquí usamos 'solicitado' como estado del pedido
+        FROM reservaciones R
+        JOIN usuarios U ON R.cliente_id = U.id
+        LEFT JOIN horarios H ON R.id = H.reservacion_id
+        LEFT JOIN pedidos P ON H.mesa_id = P.mesa_id
+        ORDER BY R.id DESC
+    ";
+    $res = procesar_query($sql, $conn);
+
+    // Verificar si hay registros
+    if ($res->cantidad > 0) {
+        $retorno .= "<table><tr><th>Reserva ID</th><th>Cliente</th><th>Estado Reserva</th><th>Mesa</th><th>Pedido ID</th><th>Estado Pedido</th></tr>";
+        foreach ($res->datos as $registro) {
+            $retorno .= "<tr>
+                <td>" . $registro['reservacion_id'] . "</td>
+                <td>" . $registro['cliente'] . "</td>
+                <td>" . $registro['estado_reserva'] . "</td>
+                <td>" . $registro['mesa_id'] . "</td>
+                <td>" . $registro['pedido_id'] . "</td>
+                <td>" . $registro['estado_pedido'] . "</td>
+            </tr>";
+        }
+        $retorno .= "</table>";
+    } else {
+        $retorno .= "<p>No se encontraron reservas ni pedidos.</p>";
+    }
+
+    // Agregar un enlace para regresar al menú de administración
+    $retorno .= "<br><a href='?opcion=admin_dashboard&token=$token'>Volver al Dashboard Admin</a>";
+
+    return $retorno;
+}
+
+function fn_ver_estadisticas($conn, $token)
+{
+    $retorno = "<h1>Estadísticas del Sistema</h1>";
+
+    // Consulta para obtener el número total de usuarios registrados
+    $sql_usuarios = "SELECT COUNT(*) AS total_usuarios FROM usuarios";
+    $res_usuarios = procesar_query($sql_usuarios, $conn);
+    $total_usuarios = $res_usuarios->datos[0]['total_usuarios'];
+
+    // Consulta para obtener el número total de pedidos
+    $sql_pedidos = "SELECT COUNT(*) AS total_pedidos FROM pedidos";
+    $res_pedidos = procesar_query($sql_pedidos, $conn);
+    $total_pedidos = $res_pedidos->datos[0]['total_pedidos'];
+
+    // Mostrar las estadísticas
+    $retorno .= "<p>Total de usuarios registrados: " . $total_usuarios . "</p>";
+    $retorno .= "<p>Total de pedidos realizados: " . $total_pedidos . "</p>";
+
+    // Agregar un enlace para regresar al menú de administración
+    $retorno .= "<br><a href='?opcion=admin_dashboard&token=$token'>Volver al Dashboard Admin</a>";
+
+    return $retorno;
+}
+
+
+function notificar_mesero($pedido_id, $mesero_id, $conn)
+{
+    // Consulta para obtener el nombre del mesero
+    $sql = "SELECT nombre FROM usuarios WHERE id = $mesero_id";
+    $resultado = procesar_query($sql, $conn);
+    $mesero_nombre = $resultado->datos[0]['nombre'];
+
+    // Mensaje de notificación
+    $mensaje = "El pedido #$pedido_id está listo para ser entregado. Mesero: $mesero_nombre.";
+
+    // Aquí podrías usar JavaScript para mostrar una notificación en la interfaz web
+    echo "<script>alert('$mensaje');</script>";
 }
 
 /*------------------------------------------------------------------*/
@@ -225,19 +372,40 @@ function fn_formulario_login()
  * @return bool True si el rol existe para el usuario, False en caso contrario.
  */
 function fn_validar_rol_db($conn, $usuario_id, $nombre_rol)
-/*--------------------------------------------------------------------*/
 {
+    // Mapeo de los nombres de roles a los ID de rol en la base de datos
+    $roles = [
+        'admin' => 1,         // Administrador tiene ID 1
+        'maitre' => 2,
+        'mesero' => 3,
+        'cocinero' => 4
+    ];
+
+    // Verifica si el nombre del rol es válido
+    if (!isset($roles[$nombre_rol])) {
+        echo "ROL NO VÁLIDO";  // Depuración si el rol no es reconocido
+        return false;  // Si el rol no existe en el mapeo, devuelve falso
+    }
+
+    $rol_id = $roles[$nombre_rol];  // Obtiene el ID del rol correspondiente
+
+    // Consulta para verificar si el usuario tiene asignado el rol correcto
     $sentencia = "
         SELECT count(*) as total
         FROM actuaciones AS act
-        JOIN roles AS rol ON act.rol_id = rol.id
         WHERE act.usuario_id = $usuario_id
-          AND rol.nombre = '$nombre_rol'
+          AND act.rol_id = $rol_id
     ";
+    
+    // Ejecución de la consulta
     $resultado = procesar_query($sentencia, $conn);
-    return ($resultado->datos[0]['total'] > 0);
-}
+    
+    if ($resultado->cantidad == 0) {
+        echo "ROL NO ASIGNADO";  // Depuración si el rol no está asignado
+    }
 
+    return ($resultado->datos[0]['total'] > 0);  // Si el rol está asignado, retorna verdadero
+}
 /*------------------------------------------------------------------*/
 /**
  * @brief Obtiene el ID del usuario asociado a un token de sesión activo.
@@ -263,6 +431,21 @@ function fn_obtener_id_usuario_por_token($conn, $token)
 
     return $retorno;
 }
+
+
+
+
+function actualizar_estado_pedido($pedido_id, $mesero_id, $conn) {
+    // Actualizar el estado del pedido a "entregado" (2)
+    $sql_update = "UPDATE ordenes SET estado = 2 WHERE id = $pedido_id";
+    procesar_query($sql_update, $conn);
+
+    // Llamar a la función para notificar al mesero que el pedido está listo para ser entregado
+    notificar_mesero($pedido_id, $mesero_id, $conn);
+}
+
+
+
 
 /*------------------------------------------------------------------*/
 /**
@@ -583,7 +766,6 @@ function fn_generar_tabla_cocina($datos, $token)
  * @return string Interfaz, Tabla completa o solo el estado "PREPARADO".
  */
 function fn_cocina($conn)
-/*--------------------------------------------------------------------*/
 {
     $retorno = "";
     $token = fn_cargar_token_activo($conn);
@@ -610,28 +792,63 @@ function fn_cocina($conn)
     }
 
     // CASO C: tabla refrescada por AJAX
-    $sql = "SELECT O.id as orden_id, P.nombre as plato, O.estado, O.cantidad,
-                   U.nombre as cliente, H.mesa_id, PED.solicitado
-            FROM ordenes O
-            JOIN platos P ON O.plato_id = P.id
-            JOIN pedidos PED ON O.pedido_id = PED.id
-            JOIN usuarios U ON PED.cliente_id = U.id
-            LEFT JOIN reservaciones R ON U.id = R.cliente_id
-            LEFT JOIN horarios H ON R.id = H.reservacion_id
-            JOIN especialidades E ON P.id = E.plato_id
-            WHERE E.cocinero_id = $id_cocinero
-              AND O.estado = 0
-            ORDER BY PED.solicitado ASC";
+    $sql = "
+        SELECT O.id as orden_id, P.nombre as plato, O.estado, O.cantidad,
+               U.nombre as cliente, H.mesa_id, O.solicitado
+        FROM ordenes O
+        JOIN platos P ON O.plato_id = P.id
+        JOIN pedidos PED ON O.pedido_id = PED.id
+        JOIN usuarios U ON PED.cliente_id = U.id
+        LEFT JOIN reservaciones R ON U.id = R.cliente_id
+        LEFT JOIN horarios H ON R.id = H.reservacion_id
+        JOIN especialidades E ON P.id = E.plato_id
+        WHERE E.cocinero_id = $id_cocinero
+          AND O.estado IN (0, 1)  -- Filtramos por estado pendiente (0) o en preparación (1)
+        ORDER BY O.solicitado ASC";
 
+    // Ejecutamos la consulta
     $res = procesar_query($sql, $conn);
+
+    // Si la consulta falla, mostramos el mensaje de error
+    if (!$res) {
+        return "<p>Error en la consulta: " . pg_last_error($conn) . "</p>";
+    }
+
+    // Mostrar los resultados en la interfaz
+    if ($res->cantidad == 0) {
+        $retorno .= "<p>No se encontraron pedidos pendientes.</p>";
+    } else {
+        // Mostrar los pedidos en una tabla limpia
+        $retorno .= "<table class='TBL_COCINA'>";
+        $retorno .= "<tr>
+                        <th>Orden</th>
+                        <th>Plato</th>
+                        <th>Cantidad</th>
+                        <th>Cliente</th>
+                        <th>Mesa</th>
+                        <th>Solicitado</th>
+                        <th>Acción</th>
+                     </tr>";
+
+        // Iteramos por cada pedido
+        foreach ($res->datos as $pedido) {
+            $retorno .= "<tr>
+                            <td>" . $pedido['orden_id'] . "</td>
+                            <td>" . htmlspecialchars($pedido['plato']) . "</td>
+                            <td>" . $pedido['cantidad'] . "</td>
+                            <td>" . htmlspecialchars($pedido['cliente']) . "</td>
+                            <td>" . $pedido['mesa_id'] . "</td>
+                            <td>" . $pedido['solicitado'] . "</td>
+                            <td><button class='BTN_ACCION'>Preparado</button></td>
+                         </tr>";
+        }
+        $retorno .= "</table>";
+    }
+
+    // Agregamos la hora de la última actualización
     $reloj = "<div class='NOTA_PIE'>Actualizado: " . date("H:i:s") . "</div>";
 
-    if ($res->cantidad == 0)
-        $retorno .= "<div class='RESALTADO'>Todo listo.</div>$reloj";
-    else
-        $retorno .= fn_generar_tabla_cocina($res->datos, $token) . $reloj;
-
-    return $retorno;
+    return $retorno . $reloj;
 }
 
 /*------------------------------------------------------------------*/
@@ -705,6 +922,44 @@ function fn_reporte_estadistico($conn)
 
     $retorno .= "<br /><div class='NOTA_PIE'>Reporte generado a las: " . date("H:i:s") . "</div>";
 
+    return $retorno;
+}
+
+function fn_gestionar_empleados($conn) {
+    $retorno = "<h1>Gestión de Empleados</h1>";
+
+    // Formulario para crear un nuevo empleado
+    $retorno .= "<form method='POST' action='?opcion=crear_empleado'>
+                    <label for='nombre'>Nombre:</label><br>
+                    <input type='text' name='nombre' required><br>
+                    <label for='rol'>Rol:</label><br>
+                    <select name='rol'>
+                        <option value='maitre'>Maitre</option>
+                        <option value='mesero'>Mesero</option>
+                        <option value='cocinero'>Cocinero</option>
+                    </select><br>
+                    <label for='login'>Login:</label><br>
+                    <input type='text' name='login' required><br>
+                    <label for='clave'>Contraseña:</label><br>
+                    <input type='password' name='clave' required><br>
+                    <button type='submit'>Crear Empleado</button>
+                  </form>";
+
+    // Listar empleados
+    $sql = "SELECT id, nombre, rol_id FROM usuarios";
+    $res = procesar_query($sql, $conn);
+    
+    $retorno .= "<table><tr><th>Nombre</th><th>Rol</th><th>Acciones</th></tr>";
+
+    foreach ($res->datos as $empleado) {
+        $retorno .= "<tr>
+                        <td>" . htmlspecialchars($empleado['nombre']) . "</td>
+                        <td>" . htmlspecialchars($empleado['rol_id']) . "</td>
+                        <td><a href='?opcion=editar_empleado&id=" . $empleado['id'] . "'>Editar</a> | <a href='?opcion=eliminar_empleado&id=" . $empleado['id'] . "'>Eliminar</a></td>
+                     </tr>";
+    }
+
+    $retorno .= "</table>";
     return $retorno;
 }
 //------------------------------------------------------------

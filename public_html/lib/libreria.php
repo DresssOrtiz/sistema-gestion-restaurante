@@ -10,10 +10,10 @@
  * @pre El servicio de PostgreSQL debe estar activo y accesible.
  * @post Si la conexión falla, el script termina su ejecución.
  */
-function pg_conectar($host, $dbname, $user)
+function pg_conectar($host, $dbname, $user, $password)
 /*--------------------------------------------------------------------*/
 {
-    $conn = pg_connect("host=$host dbname=$dbname user=$user");
+    $conn = pg_connect("host=$host dbname=$dbname user=$user password=$password");
     if (!$conn)
         die("Error de conexión: ");//.pg_last_error());
 

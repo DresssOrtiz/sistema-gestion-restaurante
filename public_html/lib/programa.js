@@ -71,3 +71,14 @@ function fn_refrescar_automatico(opcion, division, token, filtros)
         fn_refrescar_automatico(opcion, division, token, p_filtros);
     }, 10000);
 }
+
+function mostrarNotificacion(mensaje) {
+    var notification = new Notification("Pedido Listo", {
+        body: mensaje,
+        icon: "path_to_icon.png"
+    });
+
+    notification.onclick = function() {
+        window.location.href = "url_de_interfaz_del_mesero";  // Redirigir a una página específica si el mesero hace clic
+    };
+}
